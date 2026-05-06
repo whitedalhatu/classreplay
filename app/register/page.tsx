@@ -1,10 +1,10 @@
 'use client'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 
-export default function RegisterPage() {
+function RegisterForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const typeParam = searchParams.get('type') || 'student'
@@ -23,7 +23,7 @@ export default function RegisterPage() {
     confirmPassword: '',
     userType: 'skyline_student',
     programId: '',
-    courseId: '' // For volunteers
+    courseId: ''
   })
   
   const [error, setError] = useState('')
@@ -45,11 +45,13 @@ export default function RegisterPage() {
   }, [searchParams])
 
   async function fetchPrograms() {
+    if (!supabase) return;
     const { data } = await supabase.from('programs').select('*')
     setPrograms(data || [])
   }
 
   async function fetchCourses() {
+    if (!supabase) return;
     const { data } = await supabase
       .from('courses')
       .select('*, semesters(name, level)')
@@ -83,6 +85,7 @@ export default function RegisterPage() {
         return
       }
 
+      if (!supabase) return;
       const { data, error: insertError } = await supabase
         .from('admin_users')
         .insert([{
@@ -313,5 +316,13 @@ export default function RegisterPage() {
         </Link>
       </div>
     </div>
+  )
+}
+
+export default function RegisterPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading...</div>}>
+      <RegisterForm />
+    </Suspense>
   )
 }
